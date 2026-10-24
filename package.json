@@ -1,0 +1,16 @@
+{
+  "name": "zenthrip",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/anmolkumar875511/Zenthrip#readme",
+  "bugs": {
+    "url": "https://github.com/anmolkumar875511/Zenthrip/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anmolkumar875511/Zenthrip.git"
+  },
+  "author": "Anmol Kumar",
+  "type": "module",
+  "main": "index.js"
+}
