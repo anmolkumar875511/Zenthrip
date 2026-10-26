@@ -1,0 +1,56 @@
+:root {
+  --bg: #14101c;
+  --panel: #1d1829;
+  --panel2: #261f36;
+  --line: #3a3150;
+  --text: #ece7f6;
+  --muted: #9a90b3;
+  --accent: #e0483c;
+  --accent2: #f5c26b;
+  --ok: #5fcf8a;
+  --warn: #f5c26b;
+  --err: #ff7b72;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { display: flex; align-items: center; gap: 24px; padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.topbar h1 { margin: 0; font-size: 18px; letter-spacing: .08em; color: var(--accent2); }
+nav { display: flex; gap: 6px; }
+.tab { background: transparent; border: 1px solid transparent; }
+.tab.active { background: var(--panel2); border-color: var(--line); color: var(--accent2); }
+.tab:disabled { opacity: .45; }
+main { flex: 1; overflow: auto; }
+.page { max-width: 980px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+h2 { margin: 0 0 6px; font-size: 16px; } h2 small { color: var(--muted); font-weight: 400; }
+.muted { color: var(--muted); font-size: 12.5px; }
+.empty { color: var(--muted); padding: 14px 0; text-align: center; }
+.row { display: flex; align-items: center; gap: 8px; } .between { justify-content: space-between; } .end { justify-content: flex-end; margin-top: 16px; }
+.inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .wrap { gap: 14px; }
+.grow { flex: 1; min-width: 0; }
+button, select, input { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; }
+button { cursor: pointer; } button:hover:not(:disabled) { border-color: var(--accent2); } button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.danger { color: var(--err); } button.icon { padding: 4px 8px; }
+input { min-width: 0; } input.num { width: 90px; } input.wide { flex: 1; min-width: 220px; }
+input[type=checkbox] { padding: 0; accent-color: var(--accent); }
+.list, .rules, .feed { list-style: none; margin: 10px 0 0; padding: 0; }
+.item { padding: 9px 0; border-top: 1px solid var(--line); } .path { font-family: Consolas, Menlo, monospace; word-break: break-all; }
+.error { color: var(--err); font-size: 12.5px; margin-top: 4px; } .warn { color: var(--warn); font-size: 12.5px; }
+.feed { max-height: 320px; overflow: auto; }
+.act { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.act .time { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.act.warn { color: var(--warn); } .act.error { color: var(--err); }
+.rule { display: flex; align-items: center; gap: 10px; padding: 10px; margin-top: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; }
+.rule.disabled { opacity: .55; } .rule-name { font-weight: 600; }
+.handle { cursor: grab; padding: 4px 8px; touch-action: none; } .rank { width: 22px; text-align: center; color: var(--accent2); font-weight: 700; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(5, 3, 10, .7); display: grid; place-items: center; padding: 20px; }
+.modal { width: min(820px, 100%); max-height: 100%; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+.field { display: grid; gap: 6px; margin-top: 14px; } .field > span { font-weight: 600; font-size: 13px; color: var(--accent2); }
+.builder { display: grid; gap: 8px; } .cond { padding: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; } .chip { padding: 1px 8px; font-family: Consolas, Menlo, monospace; font-size: 12px; }
+.sentence { margin-top: 16px; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--panel2); border-radius: 4px; } .sentence p { margin: 4px 0 0; }
