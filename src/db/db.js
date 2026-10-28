@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { SCHEMA, SCHEMA_VERSION } from './schema.js'
+import { MIGRATIONS, SCHEMA_VERSION } from './schema.js'
 
 /** Open (or create) the database. WAL + synchronous=FULL = durable, crash-safe commits. */
 export function openDb(file = ':memory:') {
@@ -14,8 +14,18 @@ export function openDb(file = ':memory:') {
 function migrate(db) {
   const current = db.pragma('user_version', { simple: true })
   if (current >= SCHEMA_VERSION) return
-  db.transaction(() => {
-    db.exec(SCHEMA)
-    db.pragma(`user_version = ${SCHEMA_VERSION}`)
-  })()
+  for (const m of MIGRATIONS) {
+    if (m.version <= current) continue
+    db.transaction(() => {
+      db.exec(m.sql)
+      db.pragma(`user_version = ${m.version}`)
+    })()
+  }
+}
+
+/** PRAGMA integrity_check: returns 'ok' or a list of problems. */
+export function integrityCheck(db) {
+  const rows = db.pragma('integrity_check')
+  const msgs = rows.map((r) => r.integrity_check)
+  return msgs.length === 1 && msgs[0] === 'ok' ? 'ok' : msgs.join('; ')
 }
