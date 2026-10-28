@@ -39,10 +39,19 @@ export const ACTION_TYPES = {
   rename: 'Rename',
   move: 'Move to folder',
   copy: 'Copy to folder',
-  trash: 'Send to trash'
+  trash: 'Send to trash',
+  script: 'Run a script'
 }
 
 // Tokens usable inside a rename template.
 export const TEMPLATE_TOKENS = ['name', 'ext', 'original', 'date', 'year', 'month', 'day']
 
 export const MAX_WATCHED_FOLDERS = 3
+
+export const TRIGGER_KINDS = { arrival: 'When a file arrives', interval: 'Every so often', daily: 'Every day', weekly: 'On certain weekdays' }
+export const SCRIPT_TIMEOUT_MS = 10_000
+export const SETTING_LIMITS = {
+  trashRetentionDays: { min: 0, max: 3650 },
+  hopLimit: { min: 1, max: 20 },
+  retryCount: { min: 0, max: 10 }
+}
