@@ -3,6 +3,7 @@ import { ACTION_TYPES, TEMPLATE_TOKENS } from '@shared/fields.js'
 export function defaultAction(type) {
   if (type === 'rename') return { type, template: '{date}_{name}' }
   if (type === 'trash') return { type }
+  if (type === 'script') return { type, path: '' }
   return { type, to: '' }
 }
 
@@ -21,13 +22,17 @@ export default function ActionsBuilder({ actions, onChange, errors }) {
     const r = await window.zenthrip.dialog.pickDirectory()
     if (r.ok && r.path) set(i, { ...actions[i], to: r.path })
   }
+  const browseScript = async (i) => {
+    const r = await window.zenthrip.scripts.pick()
+    if (r.ok && r.path) set(i, { ...actions[i], path: r.path })
+  }
 
   return (
     <div className="builder">
       {errors.actions && <div className="error">{errors.actions}</div>}
       {actions.map((a, i) => {
         const base = `actions.${i}`
-        const err = errors[`${base}.template`] || errors[`${base}.to`] || errors[`${base}.type`] || errors[base]
+        const err = errors[`${base}.template`] || errors[`${base}.to`] || errors[`${base}.path`] || errors[`${base}.type`] || errors[base]
         return (
           <div className="cond" key={i}>
             <div className="inline">
@@ -58,6 +63,18 @@ export default function ActionsBuilder({ actions, onChange, errors }) {
                 </>
               )}
 
+              {a.type === 'script' && (
+                <>
+                  <input
+                    className="wide"
+                    value={a.path ?? ''}
+                    placeholder="Full path of the script (.js, .py, .sh, .ps1, .bat ...)"
+                    onChange={(e) => set(i, { ...a, path: e.target.value })}
+                  />
+                  <button onClick={() => browseScript(i)}>Browse…</button>
+                </>
+              )}
+
               <button className="icon" title="Move up" onClick={() => move(i, -1)} disabled={i === 0}>{'\u2191'}</button>
               <button className="icon" title="Move down" onClick={() => move(i, 1)} disabled={i === actions.length - 1}>{'\u2193'}</button>
               <button className="icon" title="Remove action" onClick={() => remove(i)} disabled={actions.length === 1}>{'\u2715'}</button>
@@ -74,6 +91,13 @@ export default function ActionsBuilder({ actions, onChange, errors }) {
                 <span className="muted">The extension is kept automatically unless you use {'{ext}'} or {'{original}'}.</span>
               </div>
             )}
+            {a.type === 'script' && (
+              <div className="warn">
+                Scripts run with your permissions, once per matching file (the file path is passed as the first argument and in
+                ZENTHRIP_FILE), stop after 10 seconds, and <b>cannot be undone</b>. You will be asked to trust the script when you save.
+              </div>
+            )}
+            {a.type === 'trash' && <div className="muted">Files go to the Keeper Trash, so this can be undone until the trash is emptied.</div>}
             {err && <div className="error">{err}</div>}
           </div>
         )
