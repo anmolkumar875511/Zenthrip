@@ -2,6 +2,7 @@
 //   "When a file arrives, if name contains “invoice” and size is larger than 1 MB,
 //    then rename to “{date}_{name}”, move to “C:\Invoices”."
 import { FIELDS } from './fields.js'
+import { describeTrigger } from '../engine/schedule.js'
 
 export function formatBytes(n) {
   const num = Number(n)
@@ -59,6 +60,8 @@ export function describeAction(a) {
       return `copy to ${q(a.to)}`
     case 'trash':
       return 'send it to the trash'
+    case 'script':
+      return `run the script ${q(a.path)}`
     default:
       return 'do something unknown'
   }
@@ -67,5 +70,9 @@ export function describeAction(a) {
 export function describeRule(rule) {
   const cond = describeCondition(rule.condition)
   const acts = (rule.actions ?? []).map(describeAction).join(', then ')
-  return `When a file arrives, if ${cond}, then ${acts || 'do nothing'}.`
+  const scheduled = rule.trigger && rule.trigger.type === 'schedule'
+  const when = describeTrigger(rule.trigger)
+  return scheduled
+    ? `${when}, for every file in the watched folders where ${cond}, ${acts || 'do nothing'}.`
+    : `${when}, if ${cond}, then ${acts || 'do nothing'}.`
 }
