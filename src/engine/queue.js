@@ -52,13 +52,17 @@ export class EventQueue {
       const item = this.#items.shift()
       this.#queued.delete(item.key)
       this.#inFlight.add(item.key)
+      let forget = false
       try {
-        await this.handler(item)
+        // A handler may return { forget: true } when the file is gone from this path (it was moved away):
+        // the same name can legitimately arrive again later, and that must not be mistaken for a duplicate event.
+        const res = await this.handler(item)
+        forget = Boolean(res && res.forget)
       } catch (err) {
         this.onError(err, item)
       } finally {
         this.#inFlight.delete(item.key)
-        this.#remember(item.key)
+        if (!forget) this.#remember(item.key)
       }
       await new Promise((resolve) => setImmediate(resolve)) // let IPC / UI breathe between files
     }
