@@ -11,7 +11,8 @@ export function makeCtx(partial = {}) {
     now: Date.now(), // inject a fixed value in tests so "age" is deterministic
     exists: (p) => fs.existsSync(p),
     reserved: new Set(), // destinations already claimed within this batch
-    trigger: 'arrival',
+    trigger: 'arrival', // 'arrival' | 'schedule' | 'any' (manual sweeps and previews consider every rule)
+    onlyRuleIds: null, // a scheduled run only considers the rules that are due
     folderId: undefined,
     ...partial
   }
@@ -29,7 +30,8 @@ function inScope(rule, folderId) {
 
 export function planFile(facts, rules, ctx = makeCtx()) {
   for (const rule of sortRules(rules)) {
-    if ((rule.trigger?.type ?? 'arrival') !== ctx.trigger) continue
+    if (ctx.trigger !== 'any' && (rule.trigger?.type ?? 'arrival') !== ctx.trigger) continue
+    if (ctx.onlyRuleIds && !ctx.onlyRuleIds.includes(rule.id)) continue
     if (!inScope(rule, ctx.folderId)) continue
     if (!evaluateCondition(rule.condition, facts)) continue
     const { steps, warnings } = planActions(rule.actions, facts, ctx)
