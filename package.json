@@ -1,9 +1,9 @@
 {
   "name": "zenthrip",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Zenthrip - a predictable, rule-based file organiser (Softablitz 2026, Sanctum Keeper)",
   "main": "./out/main/index.js",
-  "author": "Anmol Kumar",
+  "author": "Tessaract Zero",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
@@ -12,9 +12,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "dist": "electron-vite build && electron-builder",
-    "postinstall": "node node_modules/electron/install.js"
+    "postinstall": "node node_modules/electron/install.js",
+    "stress": "vitest run tests/stress.test.js"
   },
   "dependencies": {
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/cormorant-garamond": "^5.3.0",
     "better-sqlite3": "^13.0.3",
     "chokidar": "^6.0.0",
     "zod": "^4.6.7"
@@ -40,6 +43,7 @@
     },
     "files": [
       "out/**/*",
+      "resources/**/*",
       "package.json"
     ],
     "win": {
@@ -50,15 +54,22 @@
     "mac": {
       "target": [
         "dmg"
-      ]
+      ],
+      "category": "public.app-category.utilities"
     },
     "linux": {
       "target": [
         "AppImage"
-      ]
-    }
+      ],
+      "category": "Utility"
+    },
+    "icon": "resources/icon.png",
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ]
   },
   "engines": {
     "node": ">=22.22"
-  }
+  },
+  "license": "MIT"
 }
