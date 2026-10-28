@@ -33,3 +33,17 @@ export function readFacts(filePath, now = Date.now()) {
   if (!st.isFile()) return null
   return buildFacts(filePath, st, now)
 }
+
+/**
+ * A stable identity for a file that survives renames and moves on the same volume
+ * (device + inode; on Windows the NTFS file index). Used by the loop guard to follow one file around.
+ */
+export function fileIdOf(filePath) {
+  try {
+    const st = fs.lstatSync(filePath, { bigint: true })
+    if (st.ino && st.ino !== 0n) return `${st.dev}:${st.ino}`
+  } catch {
+    /* fall through */
+  }
+  return null
+}
