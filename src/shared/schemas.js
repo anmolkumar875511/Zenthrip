@@ -1,7 +1,8 @@
 // Validation of rules coming from the UI. Runs in the main process (never trust the renderer).
 // Hand-written walkers give precise, friendly error paths like "actions.1.to".
 import { z } from 'zod'
-import { FIELDS, ACTION_TYPES, TEMPLATE_TOKENS } from './fields.js'
+import { FIELDS, ACTION_TYPES, TEMPLATE_TOKENS, SETTING_LIMITS } from './fields.js'
+import { parseTime } from '../engine/schedule.js'
 
 const MAX_CONDITION_NODES = 40
 const MAX_DEPTH = 5
@@ -76,9 +77,40 @@ function validateActions(actions, add) {
     if ((a.type === 'move' || a.type === 'copy') && (typeof a.to !== 'string' || !ABSOLUTE_PATH.test(a.to))) {
       add(at.concat('to'), 'Choose a destination folder (a full path).')
     }
+    if (a.type === 'script') {
+      if (typeof a.path !== 'string' || !ABSOLUTE_PATH.test(a.path)) add(at.concat('path'), 'Choose a script file (a full path).')
+      else if (a.path.length > 500) add(at.concat('path'), 'That path is too long.')
+    }
     if (a.type === 'trash' && i !== actions.length - 1) add(at, 'Nothing can follow "Send to trash".')
     if (a.type === 'trash' && trashAt !== i) add(at, 'Only one "Send to trash" is allowed.')
   })
+}
+
+function validateTrigger(t, add) {
+  const at = ['trigger']
+  if (t == null || t.type === 'arrival') return
+  if (t.type !== 'schedule') return add(at.concat('type'), 'Unknown trigger.')
+  if (t.kind === 'interval') {
+    const n = Number(t.minutes)
+    if (!Number.isInteger(n) || n < 1 || n > 525_600) add(at.concat('minutes'), 'Enter a whole number of minutes (1 or more).')
+  } else if (t.kind === 'daily' || t.kind === 'weekly') {
+    if (!parseTime(t.time)) add(at.concat('time'), 'Enter a time like 09:30.')
+    if (t.kind === 'weekly') {
+      const ok = Array.isArray(t.days) && t.days.length > 0 && t.days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+      if (!ok) add(at.concat('days'), 'Pick at least one weekday.')
+    }
+  } else add(at.concat('kind'), 'Pick how often the rule runs.')
+}
+
+function cleanTrigger(t) {
+  if (!t || t.type === 'arrival') return { type: 'arrival' }
+  if (t.kind === 'interval') return { type: 'schedule', kind: 'interval', minutes: Number(t.minutes) }
+  if (t.kind === 'daily') return { type: 'schedule', kind: 'daily', time: parseTimeString(t.time) }
+  return { type: 'schedule', kind: 'weekly', days: [...new Set(t.days)].sort(), time: parseTimeString(t.time) }
+}
+const parseTimeString = (t) => {
+  const p = parseTime(t)
+  return `${String(p.h).padStart(2, '0')}:${String(p.m).padStart(2, '0')}`
 }
 
 function clean(rule) {
@@ -91,12 +123,14 @@ function clean(rule) {
       ? { type: 'rename', template: a.template.trim() }
       : a.type === 'trash'
         ? { type: 'trash' }
-        : { type: a.type, to: a.to }
+        : a.type === 'script'
+          ? { type: 'script', path: a.path }
+          : { type: a.type, to: a.to }
   return {
     ...(rule.id ? { id: rule.id } : {}),
     name: rule.name,
     enabled: rule.enabled,
-    trigger: { type: 'arrival' },
+    trigger: cleanTrigger(rule.trigger),
     condition: cleanNode(rule.condition),
     actions: rule.actions.map(cleanAction),
     folderIds: [...new Set(rule.folderIds)]
@@ -107,7 +141,7 @@ const RuleShape = z.object({
   id: z.number().int().positive().optional(),
   name: z.string().trim().min(1, 'Give the rule a name.').max(80, 'That name is too long.'),
   enabled: z.boolean().default(true),
-  trigger: z.object({ type: z.literal('arrival') }).default({ type: 'arrival' }),
+  trigger: z.any().optional(),
   condition: z.any(),
   actions: z.array(z.any()).min(1, 'Add at least one action.').max(6, 'Use at most 6 actions.'),
   folderIds: z.array(z.number().int().positive()).max(3).default([])
@@ -121,8 +155,29 @@ export function parseRule(input) {
   if (!base.success) for (const i of base.error.issues) add(i.path.map(String), i.message)
   // Report EVERYTHING that is wrong in one go, so the editor can mark every field at once.
   const raw = base.success ? base.data : (input ?? {})
+  validateTrigger(raw.trigger, add)
   validateCondition(raw.condition, ['condition'], add, { nodes: 0 })
   validateActions(Array.isArray(raw.actions) ? raw.actions : [], add)
   if (errors.length) return { ok: false, errors }
   return { ok: true, rule: clean(base.data) }
+}
+
+/** Validate a settings patch coming from the UI. Unknown keys are dropped. */
+export function parseSettingsPatch(input) {
+  const out = {}
+  const errors = []
+  const num = (key) => {
+    const { min, max } = SETTING_LIMITS[key]
+    const n = Number(input[key])
+    if (!Number.isInteger(n) || n < min || n > max) errors.push({ path: key, message: `Enter a whole number from ${min} to ${max}.` })
+    else out[key] = n
+  }
+  const bool = (key) => {
+    if (typeof input[key] !== 'boolean') errors.push({ path: key, message: 'Must be on or off.' })
+    else out[key] = input[key]
+  }
+  if (!input || typeof input !== 'object') return { ok: false, errors: [{ path: '', message: 'Invalid settings.' }] }
+  for (const k of ['trashRetentionDays', 'hopLimit', 'retryCount']) if (k in input) num(k)
+  for (const k of ['notifications', 'startAtLogin']) if (k in input) bool(k)
+  return errors.length ? { ok: false, errors } : { ok: true, patch: out }
 }
