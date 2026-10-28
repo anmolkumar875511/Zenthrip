@@ -124,9 +124,9 @@ export default function Rules() {
           rule={editing === 'new' ? null : editing}
           folders={folders}
           onClose={() => setEditing(null)}
-          onSaved={() => {
+          onSaved={(_rule, loops) => {
             setEditing(null)
-            setError('')
+            setError(loops?.length ? `Saved, but this rule forms a loop (${loops[0].text}). Zenthrip will freeze files that bounce around.` : '')
             refresh()
           }}
         />
