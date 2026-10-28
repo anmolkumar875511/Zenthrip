@@ -1,6 +1,6 @@
 // Turns a rule's actions into concrete, ordered "steps" for one file.
 // This module only PLANS. It may read the disk (to avoid name collisions) but never writes.
-//   step = { op: 'rename' | 'move' | 'copy' | 'trash', src, dest }
+//   step = { op: 'rename' | 'move' | 'copy' | 'trash' | 'script', src, dest, script? }
 import path from 'node:path'
 import { pathKey } from './paths.js'
 import { TEMPLATE_TOKENS } from '../shared/fields.js'
@@ -97,6 +97,8 @@ export function planActions(actions, facts, ctx) {
     } else if (action.type === 'trash') {
       steps.push({ op: 'trash', src: current, dest: null })
       break // nothing can happen to a trashed file
+    } else if (action.type === 'script') {
+      steps.push({ op: 'script', src: current, dest: null, script: action.path })
     } else {
       warnings.push(`Unknown action "${action.type}" was skipped.`)
     }
