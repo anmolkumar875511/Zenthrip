@@ -1,14 +1,25 @@
 import { useEffect, useState } from 'react'
-
-function stepText(s) {
-  if (s.op === 'trash') return 'send to trash'
-  return `${s.op} \u2192 ${s.dest}`
-}
+import { stepText } from '../lib/format.js'
 
 function ActivityRow({ a }) {
   const time = new Date(a.ts).toLocaleTimeString()
   let text
-  if (a.message === 'planned') {
+  if (a.message === 'executed') {
+    text = (
+      <>
+        <b>{a.file}</b> matched “{a.ruleName}”:{' '}
+        {a.results.map((r, i) => (
+          <span key={i} className={r.status === 'failed' ? 'error' : r.status === 'skipped' ? 'warn' : ''}>
+            {i > 0 && '; '}
+            {r.op} {r.status === 'done' ? '\u2713' : r.status}
+            {r.error ? ` (${r.error})` : ''}
+          </span>
+        ))}
+      </>
+    )
+  } else if (a.message === 'no-op' || a.message === 'already-handled') {
+    text = <><b>{a.file}</b>: {a.message === 'no-op' ? 'already in place' : 'already handled'}, nothing to do</>
+  } else if (a.message === 'planned') {
     const what = a.steps.length ? a.steps.map(stepText).join('; ') : 'already in place, nothing to do'
     text = (
       <>
@@ -102,7 +113,7 @@ export default function Folders({ info, activity, onClearActivity }) {
           <button onClick={onClearActivity} disabled={activity.length === 0}>Clear</button>
         </div>
         <p className="muted">
-          Execution arrives in Phase 5. For now Zenthrip only <b>reports what it would do</b> when a file arrives.
+          Files are handled as they arrive. Every action is written to the Ledger first and can be undone there.
         </p>
         {activity.length === 0 ? (
           <p className="empty">Drop a file into a watched folder to see it here.</p>
